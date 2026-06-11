@@ -18,28 +18,14 @@ README.md                项目说明
 
 ### 1. 启动后端
 
-Windows PowerShell：
-
-```powershell
-cd D:\数据集\twiki_web\backend
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-
-$env:TWIKI_DATA_PATH = "D:\数据集\2WikiMultihopQA\dev.jsonl"
-$env:PORT = "5001"
-python app.py
-```
-
-Linux / 华为云主机：
+华为云主机：
 
 ```bash
 cd ~/twiki_web/backend
-python3 -m venv .venv
-source .venv/bin/activate
+source /usr/local/arango_2wiki/venv/bin/activate
 pip install -r requirements.txt
 
-export TWIKI_DATA_PATH=/path/to/2WikiMultihopQA/dev.jsonl
+export TWIKI_DATA_PATH=/usr/local/arango_2wiki/data/dev.jsonl
 export PORT=5001
 gunicorn -w 2 -b 0.0.0.0:5001 app:app
 ```
