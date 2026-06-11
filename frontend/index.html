@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>2Wiki 多跳证据工作台</title>
+    <link rel="stylesheet" href="style.css?v=20260611c" />
+    <script src="config.js?v=20260611c"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">2W</div>
+        <div>
+          <h1>2Wiki 多跳证据工作台</h1>
+          <p>2WikiMultihopQA evidence triples, supporting facts, retrieval and clusters</p>
+        </div>
+      </div>
+
+      <section class="status-strip" aria-label="系统状态">
+        <div class="status-pill" id="modeStatus">
+          <span class="dot pending"></span>
+          <span>
+            <strong>Graph Engine</strong>
+            <small>2Wiki evidence ready</small>
+          </span>
+        </div>
+        <div class="metric">
+          <small>Questions</small>
+          <strong id="questionsCount">-</strong>
+        </div>
+        <div class="metric">
+          <small>Evidence</small>
+          <strong id="evidenceCount">-</strong>
+        </div>
+        <div class="metric">
+          <small>Clusters</small>
+          <strong id="clustersCount">-</strong>
+        </div>
+      </section>
+    </header>
+
+    <main class="workbench">
+      <aside class="left-rail">
+        <section class="panel search-panel">
+          <div class="panel-title">
+            <div>
+              <p class="eyebrow">Search</p>
+              <h2>检索问题</h2>
+            </div>
+            <button id="resetSearch" class="icon-btn" title="重置检索" aria-label="重置检索">↺</button>
+          </div>
+
+          <form id="searchForm" class="stack">
+            <label>
+              <span>关键词</span>
+              <textarea id="keyword" rows="3" spellcheck="false">director mother</textarea>
+            </label>
+            <div class="control-row">
+              <button class="primary" type="submit">
+                <span aria-hidden="true">⌕</span>
+                <span>检索</span>
+              </button>
+              <label class="compact">
+                <span>Top-K</span>
+                <select id="limitFilter">
+                  <option value="10">10</option>
+                  <option value="20" selected>20</option>
+                  <option value="50">50</option>
+                  <option value="80">80</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="filter-grid">
+              <label>
+                <span>问题类型</span>
+                <select id="typeFilter">
+                  <option value="">全部类型</option>
+                  <option value="compositional">compositional</option>
+                  <option value="comparison">comparison</option>
+                  <option value="inference">inference</option>
+                  <option value="bridge_comparison">bridge_comparison</option>
+                </select>
+              </label>
+              <label>
+                <span>关系类型</span>
+                <select id="relationFilter">
+                  <option value="">全部关系</option>
+                  <option value="director">director</option>
+                  <option value="mother">mother</option>
+                  <option value="father">father</option>
+                  <option value="publication date">publication date</option>
+                  <option value="date of birth">date of birth</option>
+                  <option value="date of death">date of death</option>
+                  <option value="place of birth">place of birth</option>
+                  <option value="place of death">place of death</option>
+                  <option value="country of citizenship">country of citizenship</option>
+                  <option value="spouse">spouse</option>
+                  <option value="performer">performer</option>
+                  <option value="composer">composer</option>
+                  <option value="award received">award received</option>
+                </select>
+              </label>
+              <label>
+                <span>数据 split</span>
+                <select id="splitFilter">
+                  <option value="">全部</option>
+                  <option value="dev">dev</option>
+                  <option value="train">train</option>
+                  <option value="test">test</option>
+                </select>
+              </label>
+              <label class="toggle-line">
+                <input id="goldFilter" type="checkbox" checked />
+                <span>仅保留金标证据</span>
+              </label>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel result-panel">
+          <div class="panel-title compact-title">
+            <h2>候选问题</h2>
+            <span class="count-chip"><b id="resultCount">0</b> 条</span>
+          </div>
+          <div id="results" class="results" aria-live="polite"></div>
+        </section>
+      </aside>
+
+      <section class="center-stage panel">
+        <nav class="tabs" aria-label="视图切换">
+          <button class="tab active" type="button" data-view="path">多跳路径</button>
+          <button class="tab" type="button" data-view="evidence">Evidence Triples</button>
+          <button class="tab" type="button" data-view="support">Supporting Facts</button>
+          <button class="tab" type="button" data-view="entity">实体邻居</button>
+        </nav>
+
+        <div class="graph-head">
+          <div>
+            <p class="eyebrow">Multi-hop Path</p>
+            <h2 id="graphTitle">选择一个问题查看多跳推理过程</h2>
+          </div>
+          <div class="tool-strip">
+            <button id="fitGraph" class="icon-text" type="button" title="适应视图">
+              <span aria-hidden="true">⛶</span>
+              <span>适应视图</span>
+            </button>
+            <button id="toggleLabels" class="icon-text" type="button" aria-pressed="true" title="显示或隐藏边标签">
+              <span aria-hidden="true">⌁</span>
+              <span>边标签</span>
+            </button>
+            <button id="copySummary" class="icon-text" type="button" title="复制当前路径摘要">
+              <span aria-hidden="true">⧉</span>
+              <span>复制摘要</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="legend" aria-label="图例">
+          <span><i class="key question"></i>Question</span>
+          <span><i class="key entity"></i>Entity</span>
+          <span><i class="key evidence"></i>Evidence</span>
+          <span><i class="key sentence"></i>Sentence</span>
+          <span><i class="key answer"></i>Answer</span>
+          <span><i class="line solid"></i>关系 / 答案</span>
+          <span><i class="line dashed"></i>支持事实</span>
+        </div>
+
+        <div id="graphCanvas" class="graph-canvas" role="img" aria-label="2Wiki 多跳路径图"></div>
+      </section>
+
+      <aside class="right-rail panel">
+        <div class="panel-title">
+          <div>
+            <p class="eyebrow">Inspector</p>
+            <h2>节点 / 证据信息</h2>
+          </div>
+          <span id="selectedState" class="count-chip">未选择</span>
+        </div>
+
+        <section class="answer-card">
+          <span>答案</span>
+          <strong id="answerText">-</strong>
+        </section>
+
+        <section class="detail-section">
+          <h3>问题元数据</h3>
+          <dl id="questionMeta" class="meta-grid"></dl>
+        </section>
+
+        <section class="detail-section">
+          <h3>Evidence Triples</h3>
+          <div id="evidenceList" class="evidence-list"></div>
+        </section>
+
+        <section class="detail-section">
+          <h3>Supporting Facts</h3>
+          <div id="supportList" class="support-list"></div>
+        </section>
+
+        <section class="detail-section">
+          <h3>Context 命中页</h3>
+          <ul id="contextList" class="context-list"></ul>
+        </section>
+      </aside>
+
+      <section class="bottom-left panel">
+        <div class="panel-title compact-title">
+          <div>
+            <p class="eyebrow">Clusters</p>
+            <h2>聚类浏览</h2>
+          </div>
+          <button id="reloadClusters" class="icon-btn" title="刷新聚类" aria-label="刷新聚类">↻</button>
+        </div>
+        <div id="clusters" class="cluster-grid"></div>
+      </section>
+
+      <section class="bottom-right panel">
+        <div class="panel-title compact-title">
+          <div>
+            <p class="eyebrow">Retrieval</p>
+            <h2>候选检索与统计</h2>
+          </div>
+          <span class="count-chip" id="retrievalMode">all</span>
+        </div>
+        <form id="retrieveForm" class="retrieve-form">
+          <input id="retrieveKeyword" value="director" aria-label="候选检索关键词" />
+          <select id="retrieveScope" aria-label="检索范围">
+            <option value="all">all</option>
+            <option value="question">question</option>
+            <option value="sentence">sentence</option>
+            <option value="entity">entity</option>
+          </select>
+          <button type="submit" class="icon-text">
+            <span aria-hidden="true">⌕</span>
+            <span>检索</span>
+          </button>
+        </form>
+        <div class="stat-columns">
+          <div id="stats" class="stats"></div>
+          <div id="retrieveResults" class="retrieve-results"></div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toastHost" class="toast-host" aria-live="polite"></div>
+
+    <template id="resultTemplate">
+      <button class="result-card" type="button">
+        <span class="result-type"></span>
+        <strong class="result-question"></strong>
+        <span class="result-answer"></span>
+        <span class="result-relations"></span>
+      </button>
+    </template>
+
+    <script src="data/twiki-index.js?v=20260611c"></script>
+    <script src="graph-engine.js?v=20260611c"></script>
+    <script src="app.js?v=20260611c"></script>
+  </body>
+</html>
