@@ -1,0 +1,13 @@
+backend/.venv/
+backend/__pycache__/
+tools/__pycache__/
+*.pyc
+backend_server.pid
+frontend_server.pid
+design/
+docs/
+tools/
+*.zip
+*.docx
+*.pdf
+*.png
